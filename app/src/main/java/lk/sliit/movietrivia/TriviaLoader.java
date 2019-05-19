@@ -19,6 +19,8 @@ public class TriviaLoader extends AsyncTaskLoader<List<Trivia>> {
         mUrl = url;
     }
 
+
+
     @Nullable
     @Override
     public List<Trivia> loadInBackground() {

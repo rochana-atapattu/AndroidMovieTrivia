@@ -10,6 +10,7 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -66,6 +67,26 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Toast.makeText(getActivity(), " button pressed " + item.getItemId(), Toast.LENGTH_SHORT).show();
+        switch (item.getItemId()) {
+
+            case android.R.id.home:
+
+
+                if (getFragmentManager().getBackStackEntryCount() == 0) {
+                    getActivity().finish();
+                } else {
+                    getFragmentManager().popBackStack();
+                }
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
@@ -77,7 +98,7 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
             return null;
         }
 
-        Toast.makeText(getActivity(), "Number of questions " +cursor.getCount(), Toast.LENGTH_SHORT).show();
+
 
 
         indexQuestion = cursor.getColumnIndex(TriviaEntry.COLUMN_QUESTION);
