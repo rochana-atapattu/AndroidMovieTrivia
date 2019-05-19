@@ -28,22 +28,18 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     FragmentManager fm;
     FragmentTransaction ft;
     TriviaFragment tf;
+    Cursor cursor;
 
-    public static Context contextOfApplication;
-    public static Context getContextOfApplication()
-    {
-        return contextOfApplication;
-    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.e(LOG_TAG, "onCreate.");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        contextOfApplication = getApplicationContext();
 
         // checks if there is less than 100 questions
-        Cursor cursor = getContentResolver().query(TriviaEntry.CONTENT_URI,null,null,null);
+        cursor = getContentResolver().query(TriviaEntry.CONTENT_URI,null,null,null);
         //Toast.makeText(this, "have data in db. " + cursor.getCount(), Toast.LENGTH_LONG).show();
         if(cursor.getCount() < 100) {
             // Get a reference to the LoaderManager, in order to interact with loaders.
@@ -54,8 +50,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             // because this activity implements the LoaderCallbacks interface).
             getSupportLoaderManager().initLoader(TRIVIA_LOADER_ID, null, this).forceLoad();
         }
+
+        //get 10 random questions from db
+        String[] projections = {TriviaEntry.COLUMN_QUESTION,TriviaEntry.COLUMN_CORRECT_ANSWER,TriviaEntry.COLUMN_INCORRECT_ANSWER_1,TriviaEntry.COLUMN_INCORRECT_ANSWER_2,TriviaEntry.COLUMN_INCORRECT_ANSWER_3};
+        cursor = getContentResolver().query(TriviaEntry.CONTENT_URI,projections,null,null,"RANDOM() limit 5");
+
         tf = new TriviaFragment();
+        //passing the data set from db to fragment
+        tf.setCursor(cursor);
         fm= getSupportFragmentManager();
+        tf.setFm(fm);
         ft = fm.beginTransaction();
         ft.replace(R.id.trivia,tf);
         ft.commit();

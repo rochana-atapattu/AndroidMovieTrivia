@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +34,7 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
 
     TextView questionText, questionNumber;
 
-    Context applicationContext = MainActivity.getContextOfApplication();
-    boolean notLast;
+
 
     int indexQuestion,indexAnswer1,indexAnswer2,indexAnswer3,indexAnswer4;
 
@@ -48,26 +49,37 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
     Cursor cursor;
     int rowNumber = 1;
     String answer;
+    FragmentManager fm;
+    FragmentTransaction ft;
+    ScoreFragment sf;
 
     public TriviaFragment() {
         // Required empty public constructor
     }
 
+    public void setCursor(Cursor cursor) {
+        this.cursor = cursor;
+    }
+
+    public void setFm(FragmentManager fm) {
+        this.fm = fm;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         v = inflater.inflate(R.layout.fragment_trivia, container, false);
-        fetchQuestions();
+
 
         // If moveToFirst() returns false then cursor is empty
         if (!cursor.moveToFirst()) {
             return null;
         }
+
         Toast.makeText(getActivity(), "Number of questions " +cursor.getCount(), Toast.LENGTH_SHORT).show();
 
-        notLast =true;
+
         indexQuestion = cursor.getColumnIndex(TriviaEntry.COLUMN_QUESTION);
         indexAnswer1 = cursor.getColumnIndex(TriviaEntry.COLUMN_CORRECT_ANSWER);
         indexAnswer2 =cursor.getColumnIndex(TriviaEntry.COLUMN_INCORRECT_ANSWER_1);
@@ -96,6 +108,7 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
         textViewScore = (TextView) v.findViewById(R.id.tvScore);
 
         btnSubmit.setClickable(true);
+        prepForNextQuestion();
         return v;
     }
 
@@ -104,6 +117,9 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
 
         switch (view.getId()) {
             case R.id.btnSubmit:
+
+                if(cursor.isLast())
+                    btnNext.setText("Finish");
 
                 if(radioGroup.getCheckedRadioButtonId()== -1){
                     Toast.makeText(getActivity(), "Please select an answer.", Toast.LENGTH_SHORT).show();
@@ -139,7 +155,18 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
                     if (radioGroup.getCheckedRadioButtonId() == -1) {
                         Toast.makeText(getActivity(), "You can't skip a question.", Toast.LENGTH_SHORT).show();
                     } else {
-                        nextQuestion();
+
+                        if(cursor.moveToNext())
+                            prepForNextQuestion();
+                        else {
+                            cursor.close();
+                            sf = new ScoreFragment();
+                            sf.setScore(Score);
+                            ft = fm.beginTransaction();
+                            ft.replace(R.id.trivia,sf);
+                            ft.commit();
+                        }
+
                     }
                 }else {
                     Toast.makeText(getActivity(), "Please submit the answer.", Toast.LENGTH_SHORT).show();
@@ -147,16 +174,11 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
                 break;
         }
     }
-    private void fetchQuestions(){
-    //get 10 random questions from db
-        String[] projections = {TriviaEntry.COLUMN_QUESTION,TriviaEntry.COLUMN_CORRECT_ANSWER,TriviaEntry.COLUMN_INCORRECT_ANSWER_1,TriviaEntry.COLUMN_INCORRECT_ANSWER_2,TriviaEntry.COLUMN_INCORRECT_ANSWER_3};
-        cursor = applicationContext.getContentResolver().query(TriviaEntry.CONTENT_URI,projections,null,null,"RANDOM() limit 5");
 
-    }
 
-    private void nextQuestion(){
+    private void prepForNextQuestion(){
 
-        notLast=cursor.moveToNext();
+
         submitted = false;
         btnSubmit.setClickable(true);
 
@@ -170,38 +192,41 @@ public class TriviaFragment extends Fragment implements View.OnClickListener{
             radioGroup.getChildAt(i).setEnabled(true);
         }
 
-        rowNumber = cursor.getPosition();
+        rowNumber = cursor.getPosition() + 1;
 
 
         questionNumber.setText("" + rowNumber);
         questionText.setText(cursor.getString(indexQuestion));
 
 
-            option1.setText(cursor.getString(indexAnswer1));
+        /*option1.setText(cursor.getString(indexAnswer1));
+        option2.setText(cursor.getString(indexAnswer2));
+        option3.setText(cursor.getString(indexAnswer3));
+        option4.setText(cursor.getString(indexAnswer4));*/
 
-            option2.setText(cursor.getString(indexAnswer2));
+        Random rand = new Random();
+        List<RadioButton> radio = new ArrayList();
+        radio.add(option1);
+        radio.add(option2);
+        radio.add(option3);
+        radio.add(option4);
 
-            option3.setText(cursor.getString(indexAnswer3));
+        List<Integer> indexes =new ArrayList<>();
+        indexes.add(indexAnswer1);
+        indexes.add(indexAnswer2);
+        indexes.add(indexAnswer3);
+        indexes.add(indexAnswer4);
 
-            option4.setText(cursor.getString(indexAnswer4));
+
+        for (int i = 0; i < indexes.size(); i++) {
+            int randomIndex = rand.nextInt(radio.size());
+            RadioButton option = radio.get(randomIndex);
+            option.setText(cursor.getString(indexes.get(i)));
+            radio.remove(randomIndex);
+        }
         answer = cursor.getString(indexAnswer1);
     }
 
-    /*public RadioButton randomOp() {
-        Random rand = new Random();
-        List<RadioButton> givenList = new ArrayList();
-        givenList.add(option1);
-        givenList.add(option2);
-        givenList.add(option3);
-        givenList.add(option4);
 
-        int numberOfElements = 4;
-
-        for (int i = 0; i < numberOfElements; i++) {
-            int randomIndex = rand.nextInt(givenList.size());
-            String randomElement = givenList.get(randomIndex);
-            givenList.remove(randomIndex);
-        }
-    }*/
 
 }
